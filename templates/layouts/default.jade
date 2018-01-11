@@ -1,0 +1,49 @@
+//- include ../mixins/first_mix_in
+
+doctype html
+html
+	head
+		meta(charset="utf-8")
+		meta(name="viewport", width="device-width", initial-scale="1.0")
+		meta(http-equiv="X-UA-Compatible" content="IE=edge")
+
+		title= title || 'Chronos'
+		link(rel="shortcut icon", href="/favicon.ico", type="image/x-icon")
+		link(href="/css/font-awesome.min.css", rel="stylesheet")
+		link(href="/css/chess.css", rel="stylesheet")
+
+		//-[if lt IE 9]
+			script(src="//cdn.jsdelivr.net/html5shiv/3.7.3/html5shiv.js")
+			script(src="//cdn.jsdelivr.net/respond/1.4.2/respond.min.js")
+		//-[endif]
+
+		//- add more css files
+		block css
+			
+		//- Add any tags to head
+		block head
+
+	body
+
+		//- HEADER
+		#header
+
+		//- BODY
+		#body
+			block intro
+
+			block content
+
+		//- FOOTER
+		#footer
+
+
+		//- JAVASCRIPT
+
+		script(src='/js/jquery/jquery.min.js')
+		script(src='/js/underscore/underscore-min.js')
+		script(src='/js/chess.js')
+
+		//- add javascript files to specific page
+		block js
+			

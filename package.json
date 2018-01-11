@@ -1,0 +1,21 @@
+{
+  "name": "chess-pro",
+  "version": "1.0.0",
+  "description": "chess game",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.tlmworks.org/lino/chess-pro.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.0.0-alpha.1",
+    "is": "^3.2.1",
+    "jade": "^1.11.0"
+  }
+}

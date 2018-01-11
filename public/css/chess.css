@@ -1,0 +1,146 @@
+*{
+	margin:0;
+	padding:0;
+	box-sizing: border-box;
+}
+
+body{
+	color:black;
+	font-weight: bolder;
+	font-size:200%;
+	background-image: url(img/background.png);
+	background-size: 40px 50px;
+}
+
+body{
+	background-color:grey;
+}
+
+
+
+/*white pieces*/
+.white.pawn{
+	background-image:url(img/whitepawn.png);	
+}
+.white.horse{
+	background-image:url(img/whitehorse.png);
+}
+.white.castle{
+	background-image:url(img/whitecastle.png);
+}
+.white.bishop{
+	background-image:url(img/whitebishop.png);
+}
+.white.king{
+	background-image:url(img/whiteking.png);
+}
+.white.queen{
+	background-image:url(img/whitequeen.png);
+}
+/*black pieces*/
+.black.pawn{
+	background-image:url(img/blackpawn.png);
+}
+.black.horse{
+	background-image:url(img/blackhorse.png);
+}
+.black.castle{
+	background-image:url(img/blackcastle.png);
+}
+.black.bishop{
+	background-image:url(img/blackbishop.png);
+}
+.black.king{
+	background-image:url(img/blackking.png);
+}
+.black.queen{
+	background-image:url(img/blackqueen.png);
+}
+
+#board{
+	display: flex;
+	flex-direction: column;
+	margin:auto auto;
+	width: 600px;
+	height: 500px;
+	z-index: 1;
+	transform: scale(2);
+	transform: perspective(600px) rotateX(30deg) scale(1.1);
+	position:relative;
+	top: 50px;
+	border:1px solid black;
+
+}
+
+#board > section,
+#board > nav{
+	height: 10%;
+	flex: 1 0 auto;
+	display:flex;
+}
+
+nav > *{
+	text-align: center;
+}
+
+nav > div,
+section > div{
+	flex: 1 0;
+}
+
+section > div{
+	height:100%;
+	background-size: 90%;
+}
+
+
+section div:nth-child(2n+1){
+	background-image: url(img/classic-piece-white.png) 
+}
+section div:nth-child(2n+2){
+	background-image: url(img/classic-piece-black.png) 
+}
+
+section:nth-child(odd) > div:nth-last-child(2n+1){
+	background-image: url(img/classic-piece-white.png) 
+}
+section:nth-child(odd) div:nth-last-child(2n+2){
+	background-image: url(img/classic-piece-black.png) 
+}
+
+span:hover{
+	cursor: pointer;
+}
+
+span{
+	width: 2em;
+	height: 3em;
+	margin:auto;
+	display: block;
+	position: relative;
+	bottom: 25px;
+	transform: scaleY(1.1) scaleX(1) translateY(-10px) translateX(-3px);
+    background-repeat: no-repeat;
+    background-size: 60px 82px;
+}
+
+.active{
+	border: 2px solid red;
+}
+div.activeAttacks{
+	border: 2px solid green
+}
+
+.clearfix {
+    *zoom:1
+}
+
+.clearfix:after,.clearfix:before {
+    content: '';
+    display: table
+}
+
+.clearfix:after {
+    clear: both
+}
+
