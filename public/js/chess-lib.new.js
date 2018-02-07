@@ -2,8 +2,8 @@
 
 const env = {
   turn: "white",
-  history:[]
-
+  history:[],
+  isGameOver: false;
 };
 
 $.fn.extend({
