@@ -11,7 +11,7 @@ const jade = require('jade');
 const express = require('express');
 const app = express();
 
-const port = process.env.PORT || 5000; 
+const port = process.env.PORT || 5000;
 /*
  * set app variables
 */
@@ -35,8 +35,8 @@ app.use(express.static('public'));
 app.use(routes)
 
 http.createServer( app ).listen( app.get('port') ,(err) => {
-	if (err){ 
-		throw err 
+	if (err){
+		throw err
 	}
 	console.log('server running on port ' + app.get('port') );
 });
