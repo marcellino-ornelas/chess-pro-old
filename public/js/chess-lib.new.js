@@ -14,7 +14,11 @@ const env = {
   },
   isTurn: function(team){
     return this.turn === team
+  },
+  changeBoards: function(){
+    this.boardType = (this.boardType === "real" ? "virtual" : "real");
   }
+
 };
 
 $.fn.extend({
@@ -54,7 +58,6 @@ $.fn.extend({
       }
     }
     return "";
-
   },
   getSquareId: function(){
     let $this = this.get(0);
@@ -134,22 +137,33 @@ Board.prototype.get = function(position){
   return this[position] || {};
 }
 
-Board.prototype.updateBoard = function(newSquare,oldSquare){
-  this[newSquare] = this.get(oldSquare);
-  this.empty(oldSquare);
+Board.prototype.updateBoard = function(newSquare,oldSquare,data){
+  this[newSquare] = data || this.get(oldSquare);
+  return this.empty(oldSquare);
 }
 
 Board.prototype.empty = function(squareId){
+  let holder = this.get(squareId);
   this[squareId] = new Board.squareData();
+  return holder;
 }
 
-Board.prototype.replicate = function(){};
+// Board.prototype.swap = function(squareIdOne,squareIdTwo){
 
-Board.prototype.populate = function(){};
+// }
+
+Board.prototype.replicate = function(oldBoard){
+  for(var key in oldBoard){
+    if( oldBoard.hasOwnProperty(key) ){
+      this[key] = new Board.squareData(oldBoard.type, oldBoard.team);
+    }
+  }
+};
+
+// Board.prototype.populate = function(){};
+
 
 // static methods
-// Board.verifySquare = RegExp.prototype.test.bind(/^[a-h][1-8]$/);
-
 Board.getRowIdNumber = (function(){
   const rowIdNumber = {a:0,b:1,c:2,d:3,e:4,f:5,g:6,h:7};
   return (function(rowLetter){
@@ -184,7 +198,64 @@ Board.squareData = function(type, team){
 }
 
 // Board.makeId = function(squareId){ return "#" + squareId; }
+Board.checkCheckMate = (function(){
 
+
+  // let addData = function(squareId,team){
+  //   kingData.currentSquare = squareId || null;
+  //   kingData.attacks = [];
+  //   kingData.moves =[];
+  //   kingData.team = team;
+  // }
+
+  return (function(team,){
+    let $king = $(".king." + team);
+    let squareId = $king.parent(".chess-square").getSquareId();
+
+    let kingData = Object.create(ChessPiece.prototype);
+    kingData.type ='king';
+    kingData.data = chessPieces.all;
+    kingData.possibleMoves = chessPieces.all.possibleMoves;
+    kingData.currentSquare = squareId || null;
+    kingData.attacks = [];
+    kingData.moves =[];
+    kingData.team = team;
+
+    team = team || env.turn;
+
+
+    addData(squareId,team);
+
+    kingData.calcMoves();
+
+    for(let i = 0; i < kingData.attacks.length; i++){
+      let squareId = kingData.attacks[i];
+      let opponitePiece = new ChessPiece( $("#" + squareId + " > .chess-piece"), true );
+
+      // opponitePiece.currentSquare;
+
+      // console.log(opponitePiece);
+      if( _.contains(opponitePiece.attacks, squareId) ){
+        env.isIncheck = true;
+
+        env.changeBoards();
+        // board.replicate(board[ env.boardType ]);
+
+        let realking = new ChessPiece($king);
+        let allMoves = realKing.moves.concat(realking.attacks);
+
+        for(let j = 0; i < allMoves.length; j++){
+          let oldDataHolder = board.updateBoard()
+          // if(){}
+        }
+
+      }
+    }
+
+    // console.log(kingData)
+
+  });
+}());
 
 Board.allSpaces = 'a1 a2 a3 a4 a5 a6 a7 a8 b1 b2 b3 b4 b5 b6 b7 b8 c1 c2 c3 c4 c5 c6 c7 c8 d1 d2 d3 d4 d5 d6 d7 d8 e1 e2 e3 e4 e5 e6 e7 e8 f1 f2 f3 f4 f5 f6 f7 f8 g1 g2 g3 g4 g5 g6 g7 g8 h1 h2 h3 h4 h5 h6 h7 h8'.split(' ');
 
@@ -219,7 +290,6 @@ _.each(Board.allSpaces, function(item){
 
 });
 
-
 /*
  * Chess Piece
  * This constructor will make a new chess piece
@@ -240,6 +310,7 @@ function ChessPiece($piece,dontCalculate){
   // calculate moves and attacks for this piece
   // if dontCalculate is false
   !dontCalculate && this.calcMoves();
+  // console.log(this)
 };
 
 
@@ -327,6 +398,7 @@ ChessPiece.prototype.move = function(squareId){
 
   board.updateBoard(squareId, oldSquare);
   env.changeTurn();
+  Board.checkCheckMate();
 
 }
 
