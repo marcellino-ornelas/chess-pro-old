@@ -139,19 +139,23 @@ Board.prototype.get = function(position){
   return this[position] || {};
 }
 
-board.prototype.set = function(id, data){
+Board.prototype.set = function(id, data){
   this[id] = data;
+  this[id].currentSquare = id;
 }
 
 Board.prototype.updateBoard = function(newSquare,oldSquare,data){
+  let holder = this.get(newSquare);
   this[newSquare] = this.get(oldSquare);
-  return this.empty(oldSquare);
+  this[newSquare].currentSquare = newSquare;
+  this.empty(oldSquare);
+  return holder
 }
 
 Board.prototype.empty = function(squareId){
-  let holder = this.get(squareId);
-  this[squareId] = new Board.squareData();
-  return holder;
+  // let holder = this.get(squareId);
+  this[squareId] = new Board.squareData(squareId);
+  // return holder;
 }
 
 // Board.prototype.swap = function(squareIdOne,squareIdTwo){
@@ -161,7 +165,8 @@ Board.prototype.empty = function(squareId){
 Board.prototype.replicate = function(oldBoard){
   for(var key in oldBoard){
     if( oldBoard.hasOwnProperty(key) ){
-      this[key] = new Board.squareData(oldBoard.type, oldBoard.team);
+      let currentBoardSquare = oldBoard[key];
+      this[key] = (new Board.squareData(key,currentBoardSquare.type, currentBoardSquare.team, currentBoardSquare.hasMoved));
     }
   }
 };
@@ -207,7 +212,11 @@ Board.squareData = function(currentSquare,type,team, hasMoved){
 
 Board.makeId = function(squareId){ return "#" + squareId; }
 Board.checkCheckMate = function(squareId){
-  debugger;
+
+    let terminate = function(answer){
+      env.changeBoards("real");
+      return answer;
+    }
 
     let canBeKilled = function(currentId,kingSquareId){
         let opponitePiece = new ChessPiece( currentId, true);
@@ -231,7 +240,7 @@ Board.checkCheckMate = function(squareId){
 
 
     board.virtual.replicate( board[ env.boardType ]);
-    if(env.boardType === "virtual"){ env.changeBoards("virtual"); }
+    env.changeBoards("virtual")
 
 
     for(let i = 0; i < firstMoves.length; i++){
@@ -248,61 +257,65 @@ Board.checkCheckMate = function(squareId){
         for(let j = 0; j < allMoves.length; j++){
           // can the king move to a new spot
           let newSquare = allMoves[j];
-
           let holder = board.updateBoard(newSquare, kingData.currentSquare);
+          let oldKingSpot = kingData.currentSquare;
 
           kingData.currentSquare = newSquare;
           kingData.empty();
           kingData.calcMoves();
 
-          let allNewMoves = kingData.moves.concat(kingData.attacks);
+          let allNewMoves = kingData.attacks
+          let canKingMoveToPossibleSquare = true;
 
-          for(let d = 0; d < allNewMoves.length; d++){
-            // can the king kill anything from the new spot
-            let finalSquare = allNewMoves[d];
-
-            if(canBeKilled( finalSquare , newSquare )){
-
-              let allTeamPieces = $(".chess-piece." + kingData.team).map(function(){
-                return new chessPiece( $(this).getSquareId() );
-              }).get();
-
-              for(let index = 0; index < allTeamPieces.length; index++ ){
-                // can any piece move in front of the attacker
-                let currentTeamMember = allTeamPieces[index];
-                let currentTeamMemberMoves = currentTeamMember.moves.concat(currentTeamMember.attacks);
-
-                for(let z = 0; z < currentTeamMemberMoves.length; z++){
-                  let teamMemberSquareId = currentTeamMemberMoves[i];
-                  let teamMemberHolder = board.updateBoard(teamMemberSquareId, currentTeamMember );
-
-                  kingData.empty();
-                  kingData.calcMoves();
-
-                  let lastStandMoves = kingData.attacks;
-
-                  if(_.contains(lastStandMoves, canKillKingId )){
-                    console.log("checkmate")
-                    return true;
-                  }
-
-                  board.updateBoard(currentTeamMember,teamMemberSquareId);
-                  board.set(teamMemberSquareId,teamMemberHolder);
-                }
-
-              }
-
-
+          for(let p = 0; p < allNewMoves.length; p++ ){
+            let finalSquare = allNewMoves[p];
+            if( canBeKilled( finalSquare , newSquare ) ){
+              canKingMoveToPossibleSquare = false;
             }
           }
 
-        }
-        board.updateBoard( kingData.currentSquare, newSquare);
-        board.set(newSquare, holder)
+          if(canKingMoveToPossibleSquare){ return terminate(false); }
 
+          board.updateBoard( oldKingSpot, newSquare);
+          board.set(newSquare, holder);
+          kingData.currentSquare = oldKingSpot;
+
+          let allTeamPieces = $(".chess-piece." + kingData.team + ":not(.king)").map(function(item,index){
+            return new ChessPiece( $(this).getSquareId() );
+          }).get();
+
+
+          for(let index = 0; index < allTeamPieces.length; index++ ){
+            // can any piece move in front of the attacker
+            let currentTeamMember = allTeamPieces[index];
+            let currentTeamMemberMoves = currentTeamMember.moves.concat(currentTeamMember.attacks);
+
+            for(let z = 0; z < currentTeamMemberMoves.length; z++){
+              // all moves for  current team mate
+              let teamMemberMoveSquareId = currentTeamMemberMoves[i];
+              let teamMemberHolder = board.updateBoard(teamMemberMoveSquareId, currentTeamMember.currentSquare );
+
+              kingData.empty();
+              kingData.calcMoves();
+
+              let lastStandMoves = kingData.attacks;
+
+              if(!_.contains(lastStandMoves, canKillKingId )){
+                console.log("this team mate can help");
+                console.log(currentTeamMember)
+                return terminate(false);
+              }
+
+              board.updateBoard(currentTeamMember,teamMemberMoveSquareId);
+              board.set(teamMemberMoveSquareId,teamMemberHolder);
+            }
+
+          }
+          return terminate(true);
+        }
       }
     }
-
+    return terminate(false);
   };
 
 Board.allSpaces = 'a1 a2 a3 a4 a5 a6 a7 a8 b1 b2 b3 b4 b5 b6 b7 b8 c1 c2 c3 c4 c5 c6 c7 c8 d1 d2 d3 d4 d5 d6 d7 d8 e1 e2 e3 e4 e5 e6 e7 e8 f1 f2 f3 f4 f5 f6 f7 f8 g1 g2 g3 g4 g5 g6 g7 g8 h1 h2 h3 h4 h5 h6 h7 h8'.split(' ');
@@ -443,6 +456,7 @@ ChessPiece.prototype.CanAttack = function(squareId){
 ChessPiece.prototype.move = function(squareId){
   // save old squareId
   let oldSquare = this.currentSquare;
+
 
   if(!this.hasMoved){ this.$node.attr("data-hasMoved","true") }
   //  move the piece
