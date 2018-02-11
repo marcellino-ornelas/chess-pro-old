@@ -7,7 +7,7 @@
 	<body>
 		<div style="margin: auto; width:20%;"><button id='back'type="button" style="width: 350px;"> back </button></div>
 
-		<header id="board">
+		<main id="board">
 <!-- 			<nav>
 				<div>a</div>
 				<div>b</div>
@@ -18,7 +18,7 @@
 				<div>g</div>
 				<div>h</div>
 			</nav> -->
-			<section>
+			<section class="board-row">
 				<div id="a1" class="chess-square"><span class="chess-piece castle white" data-data-hasMoved='false'></span></div>
 				<div id="b1" class="chess-square"><span class="chess-piece horse white"></span></div>
 				<div id="c1" class="chess-square"><span class="chess-piece bishop white"></span></div>
@@ -28,7 +28,7 @@
 				<div id="g1" class="chess-square"><span class="chess-piece horse white"></span></div>
 				<div id="h1" class="chess-square"><span class="chess-piece castle white" data-hasMoved='false'></span></div>
 			</section>
-			<section>
+			<section class="board-row">
 				<div id="a2" class="chess-square"><span class="chess-piece pawn white" data-hasMoved='false'></span></div>
 				<div id="b2" class="chess-square"><span class="chess-piece pawn white" data-hasMoved='false'></span></div>
 				<div id="c2" class="chess-square"><span class="chess-piece pawn white" data-hasMoved='false'></span></div>
@@ -38,7 +38,7 @@
 				<div id="g2" class="chess-square"><span class="chess-piece pawn white" data-hasMoved='false'></span></div>
 				<div id="h2" class="chess-square"><span class="chess-piece pawn white" data-hasMoved='false'></span></div>
 			</section>
-			<section>
+			<section class="board-row">
 				<div id="a3" class="chess-square"></div>
 				<div id="b3" class="chess-square"></div>
 				<div id="c3" class="chess-square"></div>
@@ -48,7 +48,7 @@
 				<div id="g3" class="chess-square"></div>
 				<div id="h3" class="chess-square"></div>
 			</section>
-			<section>
+			<section class="board-row">
 				<div id="a4" class="chess-square"></div>
 				<div id="b4" class="chess-square"></div>
 				<div id="c4" class="chess-square"></div>
@@ -58,7 +58,7 @@
 				<div id="g4" class="chess-square"></div>
 				<div id="h4" class="chess-square"></div>
 			</section>
-			<section>
+			<section class="board-row">
 				<div id="a5" class="chess-square"></div>
 				<div id="b5" class="chess-square"></div>
 				<div id="c5" class="chess-square"></div>
@@ -68,7 +68,7 @@
 				<div id="g5" class="chess-square"></div>
 				<div id="h5" class="chess-square"></div>
 			</section>
-			<section>
+			<section class="board-row">
 				<div id="a6" class="chess-square"></div>
 				<div id="b6" class="chess-square"></div>
 				<div id="c6" class="chess-square"></div>
@@ -78,7 +78,7 @@
 				<div id="g6" class="chess-square"></div>
 				<div id="h6" class="chess-square"></div>
 			</section>
-			<section>
+			<section class="board-row">
 				<div id="a7" class="chess-square"><span class="chess-piece pawn black" data-hasMoved=false ></div>
 				<div id="b7" class="chess-square"><span class="chess-piece pawn black" data-hasMoved='false' ></div>
 				<div id="c7" class="chess-square"><span class="chess-piece pawn black" data-hasMoved='false' ></div>
@@ -88,7 +88,7 @@
 				<div id="g7" class="chess-square"><span class="chess-piece pawn black" data-hasMoved='false' ></div>
 				<div id="h7" class="chess-square"><span class="chess-piece pawn black" data-hasMoved='false' ></div>
 			</section>
-			<section>
+			<section class="board-row">
 				<div id="a8" class="chess-square"><span class="chess-piece castle black" data-hasMoved='false'></div>
 				<div id="b8" class="chess-square"><span class="chess-piece horse black"></div>
 				<div id="c8" class="chess-square"><span class="chess-piece bishop black"></div>
@@ -108,8 +108,10 @@
 				<div>g</div>
 				<div>h</div>
 			</nav> -->
-		</header>
+		</main>
 
+
+		<div class="pop-up"> helllooooooooo </div>
 		<script type="text/javascript" src="js/underscore/underscore-min.js"></script>
 		<script src="js/jquery/jquery.min.js"></script>
 		<script src="js/chess-lib.new.js"></script>
