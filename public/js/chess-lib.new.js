@@ -15,8 +15,10 @@ const env = {
   isTurn: function(team){
     return this.turn === team
   },
-  changeBoards: function(){
-    this.boardType = (this.boardType === "real" ? "virtual" : "real");
+  changeBoards: function(type){
+    let answer = type;
+    if(!answer){ answer = (this.boardType === "real" ? "virtual" : "real"); }
+    this.boardType = answer;
   }
 
 };
@@ -137,8 +139,12 @@ Board.prototype.get = function(position){
   return this[position] || {};
 }
 
+board.prototype.set = function(id, data){
+  this[id] = data;
+}
+
 Board.prototype.updateBoard = function(newSquare,oldSquare,data){
-  this[newSquare] = data || this.get(oldSquare);
+  this[newSquare] = this.get(oldSquare);
   return this.empty(oldSquare);
 }
 
@@ -192,70 +198,112 @@ Board.calcNewSquare = function(oldSquare,addToRow,addToCol){
   return Board.isValidPosition(newPosition) ? newPosition : false;
 };
 
-Board.squareData = function(type, team){
+Board.squareData = function(currentSquare,type,team, hasMoved){
+  this.currentSquare = currentSquare;
   this.type = type || "";
   this.team = team || "";
+  this.hasMoved = hasMoved || false;
 }
 
-// Board.makeId = function(squareId){ return "#" + squareId; }
-Board.checkCheckMate = (function(){
+Board.makeId = function(squareId){ return "#" + squareId; }
+Board.checkCheckMate = function(squareId){
+  debugger;
 
+    let canBeKilled = function(currentId,kingSquareId){
+        let opponitePiece = new ChessPiece( currentId, true);
+        // opponitePiece.team =opponitePiece.team;
+        opponitePiece.calcMoves();
+        return _.contains(opponitePiece.attacks, kingSquareId);
+    }
 
-  // let addData = function(squareId,team){
-  //   kingData.currentSquare = squareId || null;
-  //   kingData.attacks = [];
-  //   kingData.moves =[];
-  //   kingData.team = team;
-  // }
+    if(!squareId){
+      let $king = $(".king." + env.turn);
+      squareId = $king.parent(".chess-square").getSquareId();
+    }
 
-  return (function(team,){
-    let $king = $(".king." + team);
-    let squareId = $king.parent(".chess-square").getSquareId();
-
-    let kingData = Object.create(ChessPiece.prototype);
-    kingData.type ='king';
+    let kingData = new ChessPiece(squareId, true);
+    kingData.team = env.turn;
     kingData.data = chessPieces.all;
     kingData.possibleMoves = chessPieces.all.possibleMoves;
-    kingData.currentSquare = squareId || null;
-    kingData.attacks = [];
-    kingData.moves =[];
-    kingData.team = team;
-
-    team = team || env.turn;
-
-
-    addData(squareId,team);
-
     kingData.calcMoves();
 
-    for(let i = 0; i < kingData.attacks.length; i++){
-      let squareId = kingData.attacks[i];
-      let opponitePiece = new ChessPiece( $("#" + squareId + " > .chess-piece"), true );
+    let firstMoves = kingData.attacks;
 
-      // opponitePiece.currentSquare;
 
-      // console.log(opponitePiece);
-      if( _.contains(opponitePiece.attacks, squareId) ){
-        env.isIncheck = true;
+    board.virtual.replicate( board[ env.boardType ]);
+    if(env.boardType === "virtual"){ env.changeBoards("virtual"); }
 
-        env.changeBoards();
-        // board.replicate(board[ env.boardType ]);
 
-        let realking = new ChessPiece($king);
-        let allMoves = realKing.moves.concat(realking.attacks);
+    for(let i = 0; i < firstMoves.length; i++){
+      // can anything kill the king while inheriting moves from
+      // all pieces
+      let canKillKingId = firstMoves[i];
 
-        for(let j = 0; i < allMoves.length; j++){
-          let oldDataHolder = board.updateBoard()
-          // if(){}
+      if( canBeKilled(canKillKingId, kingData.currentSquare) ){
+        console.log("king can be killed from: " + canKillKingId)
+
+        let realking = new ChessPiece( kingData.currentSquare );
+        let allMoves = realking.moves.concat(realking.attacks);
+
+        for(let j = 0; j < allMoves.length; j++){
+          // can the king move to a new spot
+          let newSquare = allMoves[j];
+
+          let holder = board.updateBoard(newSquare, kingData.currentSquare);
+
+          kingData.currentSquare = newSquare;
+          kingData.empty();
+          kingData.calcMoves();
+
+          let allNewMoves = kingData.moves.concat(kingData.attacks);
+
+          for(let d = 0; d < allNewMoves.length; d++){
+            // can the king kill anything from the new spot
+            let finalSquare = allNewMoves[d];
+
+            if(canBeKilled( finalSquare , newSquare )){
+
+              let allTeamPieces = $(".chess-piece." + kingData.team).map(function(){
+                return new chessPiece( $(this).getSquareId() );
+              }).get();
+
+              for(let index = 0; index < allTeamPieces.length; index++ ){
+                // can any piece move in front of the attacker
+                let currentTeamMember = allTeamPieces[index];
+                let currentTeamMemberMoves = currentTeamMember.moves.concat(currentTeamMember.attacks);
+
+                for(let z = 0; z < currentTeamMemberMoves.length; z++){
+                  let teamMemberSquareId = currentTeamMemberMoves[i];
+                  let teamMemberHolder = board.updateBoard(teamMemberSquareId, currentTeamMember );
+
+                  kingData.empty();
+                  kingData.calcMoves();
+
+                  let lastStandMoves = kingData.attacks;
+
+                  if(_.contains(lastStandMoves, canKillKingId )){
+                    console.log("checkmate")
+                    return true;
+                  }
+
+                  board.updateBoard(currentTeamMember,teamMemberSquareId);
+                  board.set(teamMemberSquareId,teamMemberHolder);
+                }
+
+              }
+
+
+            }
+          }
+
         }
+        board.updateBoard( kingData.currentSquare, newSquare);
+        board.set(newSquare, holder)
 
       }
     }
 
-    // console.log(kingData)
-
-  });
-}());
+  };
 
 Board.allSpaces = 'a1 a2 a3 a4 a5 a6 a7 a8 b1 b2 b3 b4 b5 b6 b7 b8 c1 c2 c3 c4 c5 c6 c7 c8 d1 d2 d3 d4 d5 d6 d7 d8 e1 e2 e3 e4 e5 e6 e7 e8 f1 f2 f3 f4 f5 f6 f7 f8 g1 g2 g3 g4 g5 g6 g7 g8 h1 h2 h3 h4 h5 h6 h7 h8'.split(' ');
 
@@ -279,14 +327,15 @@ _.each(_.keys(Board.prototype), function(method){
 });
 
 
-_.each(Board.allSpaces, function(item){
+_.each(Board.allSpaces, function(squareId){
   // populate the Board object model
-  let $squareData = $("#" + item + "");
+  let $squareData = $("#" + squareId);
 
-  let name = $squareData.getPieceType();
-  let team = $squareData.getTeam()
+  let type = $squareData.getPieceType();
+  let team = $squareData.getTeam();
+  let hasMoved = $squareData.children(".chess-piece").hasMoved();
 
-  board.real[item] = new Board.squareData(name, team);
+  board.real[squareId] = new Board.squareData(squareId, type, team, hasMoved);
 
 });
 
@@ -295,12 +344,14 @@ _.each(Board.allSpaces, function(item){
  * This constructor will make a new chess piece
 */
 
-function ChessPiece($piece,dontCalculate){
-  this.$node = $piece;
-  this.team = $piece.getTeam();
-  this.type = $piece.getPieceType();
-  this.currentSquare = $piece.getSquareId();
-  this.hasMoved = $piece.hasMoved();
+function ChessPiece(squareId,dontCalculate){
+  let boardData = board.get(squareId);
+
+  this.$node = $("#" + squareId + " > .chess-piece");
+  this.team = boardData.team;
+  this.type = boardData.type;
+  this.currentSquare = squareId;
+  this.hasMoved = boardData.hasMoved;
   this.attacks = [];
   this.moves = [];
 
@@ -310,8 +361,12 @@ function ChessPiece($piece,dontCalculate){
   // calculate moves and attacks for this piece
   // if dontCalculate is false
   !dontCalculate && this.calcMoves();
-  // console.log(this)
 };
+
+ChessPiece.prototype.empty = function(){
+  this.attacks = [];
+  this.moves = [];
+}
 
 
 ChessPiece.prototype.isEnemy = function(teamName){
@@ -398,7 +453,7 @@ ChessPiece.prototype.move = function(squareId){
 
   board.updateBoard(squareId, oldSquare);
   env.changeTurn();
-  Board.checkCheckMate();
+  // Board.checkCheckMate();
 
 }
 
@@ -444,12 +499,12 @@ env.board[0].addEventListener('click', function(event){
   if(env.activePiece && $target.is(".chess-piece") && env.activePiece.isEnemy($target.getTeam()) ){
     $target = $target.parent(".chess-square");
   }
+  let squareId = $target.getSquareId();
 
   switch($target.get(0).nodeName){
     case "DIV":
       if( !piece){ return; }
 
-      let squareId = $target.getSquareId();
 
       if(piece.canMoveTo(squareId)){
 
@@ -469,7 +524,7 @@ env.board[0].addEventListener('click', function(event){
         env.activePiece.deactivateAllMoves();
       }
 
-      env.activePiece = new ChessPiece($target);
+      env.activePiece = new ChessPiece(squareId);
 
       env.activePiece.activateAllMoves();
       break;
