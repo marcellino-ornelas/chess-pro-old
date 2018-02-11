@@ -69,26 +69,21 @@ body{
 	position:relative;
 	top: 50px;
 	border:1px solid black;
-
 }
 
-#board > section,
-#board > nav{
+.board-row{
 	height: 10%;
-	flex: 1 0 auto;
 	display:flex;
 }
 
-nav > *{
-	text-align: center;
-}
 
-nav > div,
-section > div{
+/*nav > div,*/
+.board-row,
+.chess-square{
 	flex: 1 0;
 }
 
-section > div{
+.chess-square{
 	height:100%;
 	background-size: 90%;
 }
@@ -108,11 +103,11 @@ section:nth-child(odd) div:nth-last-child(2n+2){
 	background-image: url(img/classic-piece-black.png)
 }
 
-span:hover{
+.chess-piece:hover{
 	cursor: pointer;
 }
 
-span{
+.chess-piece{
 	width: 2em;
 	height: 3em;
 	margin:auto;
@@ -135,16 +130,15 @@ span{
 	border-color: green;
 }
 
-.clearfix {
-    *zoom:1
-}
-
-.clearfix:after,.clearfix:before {
-    content: '';
-    display: table
-}
-
-.clearfix:after {
-    clear: both
+.pop-up{
+	height:100%;
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	position: absolute;
+	z-index: 2;
+	color: red ;
+	font-size: 2em;
 }
 

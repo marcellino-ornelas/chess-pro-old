@@ -5,9 +5,19 @@ const env = {
   history:[],
   isGameOver: false,
   board: $("#board"),
+  popUpDisplay: $(".pop-up"),
   boardType: "real",
   activePiece: null,
-  isIncheck: false,
+  isInCheck: false,
+  putInCheck: function(){
+    this.isInCheck = true;
+  },
+  takeOutOfCheck: function(){
+    this.isIncheck = false;
+  },
+  gameOver: function(){
+    this.isGameOver = true;
+  },
   changeTurn: function(){
     this.turn = (this.isTurn("white") ? "black" : "white");
     this.activePiece =null;
@@ -19,6 +29,9 @@ const env = {
     let answer = type;
     if(!answer){ answer = (this.boardType === "real" ? "virtual" : "real"); }
     this.boardType = answer;
+  },
+  display: function(text){
+    this.popUpDisplay.text(text);
   }
 
 };
@@ -215,6 +228,7 @@ Board.checkCheckMate = function(squareId){
 
     let terminate = function(answer){
       env.changeBoards("real");
+      board.virtual = new Board();
       return answer;
     }
 
@@ -240,16 +254,18 @@ Board.checkCheckMate = function(squareId){
 
 
     board.virtual.replicate( board[ env.boardType ]);
-    env.changeBoards("virtual")
+    env.changeBoards("virtual");
 
 
     for(let i = 0; i < firstMoves.length; i++){
       // can anything kill the king while inheriting moves from
       // all pieces
+      // is the king in check
       let canKillKingId = firstMoves[i];
 
       if( canBeKilled(canKillKingId, kingData.currentSquare) ){
-        console.log("king can be killed from: " + canKillKingId)
+
+        env.putInCheck();
 
         let realking = new ChessPiece( kingData.currentSquare );
         let allMoves = realking.moves.concat(realking.attacks);
@@ -301,8 +317,6 @@ Board.checkCheckMate = function(squareId){
               let lastStandMoves = kingData.attacks;
 
               if(!_.contains(lastStandMoves, canKillKingId )){
-                console.log("this team mate can help");
-                console.log(currentTeamMember)
                 return terminate(false);
               }
 
@@ -507,7 +521,9 @@ env.board[0].addEventListener('click', function(event){
   let $target = $(event.target || event.srcElement);
   let piece = env.activePiece;
 
-  if(!$target.isChessRelated() ){ return;}
+  if(!$target.isChessRelated() || env.isGameOver ){ return; }
+
+
 
   // if a enemy piece is selected
   if(env.activePiece && $target.is(".chess-piece") && env.activePiece.isEnemy($target.getTeam()) ){
@@ -517,7 +533,7 @@ env.board[0].addEventListener('click', function(event){
 
   switch($target.get(0).nodeName){
     case "DIV":
-      if( !piece){ return; }
+      if( !piece ){ return; }
 
 
       if(piece.canMoveTo(squareId)){
@@ -527,6 +543,9 @@ env.board[0].addEventListener('click', function(event){
         } else {
           piece.move(squareId);
         }
+        let teamKingId = $(".king." + env.turn).parent().getSquareId();
+        if(Board.checkCheckMate(teamKingId)){ return env.gameOver(); }
+        if( env.isInCheck ){ console.log("check"); }
       }
 
       break;
