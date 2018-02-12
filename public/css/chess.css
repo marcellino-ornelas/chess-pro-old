@@ -137,8 +137,13 @@ section:nth-child(odd) div:nth-last-child(2n+2){
 	justify-content: center;
 	align-items: center;
 	position: absolute;
-	z-index: 2;
-	color: red ;
+	top:0;
+	z-index: 0;
+}
+
+.pop-up-content{
 	font-size: 2em;
+	color: red;
+
 }
 

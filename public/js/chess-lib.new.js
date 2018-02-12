@@ -9,14 +9,17 @@ const env = {
   boardType: "real",
   activePiece: null,
   isInCheck: false,
+  fadeTime: 1000,
   putInCheck: function(){
     this.isInCheck = true;
+    this.display("Check");
   },
   takeOutOfCheck: function(){
-    this.isIncheck = false;
+    this.isInCheck = false;
   },
   gameOver: function(){
     this.isGameOver = true;
+    this.display("Check Mate")
   },
   changeTurn: function(){
     this.turn = (this.isTurn("white") ? "black" : "white");
@@ -31,7 +34,16 @@ const env = {
     this.boardType = answer;
   },
   display: function(text){
-    this.popUpDisplay.text(text);
+    let me = this;
+    me.popUpDisplay
+      .css("z-index","2")
+      .children(".pop-up-content")
+      .text(text)
+      .fadeIn(me.fadeTime / 2, function(){
+        me.popUpDisplay.children(".pop-up-content").fadeOut(me.fadeTime,function(){
+          me.popUpDisplay.css("z-index","0");
+        });
+      });
   }
 
 };
@@ -149,6 +161,9 @@ Board.prototype.isOpen = function(squareId){
 };
 
 Board.prototype.get = function(position){
+  if(!position || !Board.isValidPosition(position) ){
+    return this
+  }
   return this[position] || {};
 }
 
@@ -166,14 +181,9 @@ Board.prototype.updateBoard = function(newSquare,oldSquare,data){
 }
 
 Board.prototype.empty = function(squareId){
-  // let holder = this.get(squareId);
   this[squareId] = new Board.squareData(squareId);
-  // return holder;
 }
 
-// Board.prototype.swap = function(squareIdOne,squareIdTwo){
-
-// }
 
 Board.prototype.replicate = function(oldBoard){
   for(var key in oldBoard){
@@ -183,9 +193,6 @@ Board.prototype.replicate = function(oldBoard){
     }
   }
 };
-
-// Board.prototype.populate = function(){};
-
 
 // static methods
 Board.getRowIdNumber = (function(){
@@ -224,7 +231,36 @@ Board.squareData = function(currentSquare,type,team, hasMoved){
 }
 
 Board.makeId = function(squareId){ return "#" + squareId; }
+
+let isKingInCheck = function(kingSquareId){
+  let kingData = new ChessPiece( kingSquareId, true);
+  kingData.data = chessPieces.all;
+  kingData.possibleMoves = chessPieces.all.possibleMoves;
+
+  // kingData.team = env.turn;
+  kingData.calcMoves();
+
+  for(let i = 0; i < kingData.attacks.length; i++){
+    let currentAttack = kingData.attacks[i];
+
+    let opponitePiece = new ChessPiece(currentAttack,true);
+    opponitePiece.calcMoves();
+    if( _.contains( opponitePiece.attacks, kingSquareId ) ){
+      return true;
+    }
+  }
+
+  return false;
+
+}
+
 Board.checkCheckMate = function(squareId){
+
+  // this is bad coding right here
+  // will come back and fix after
+  // chess game works
+  // debugger;
+
 
     let terminate = function(answer){
       env.changeBoards("real");
@@ -233,9 +269,7 @@ Board.checkCheckMate = function(squareId){
     }
 
     let canBeKilled = function(currentId,kingSquareId){
-        let opponitePiece = new ChessPiece( currentId, true);
-        // opponitePiece.team =opponitePiece.team;
-        opponitePiece.calcMoves();
+        let opponitePiece = new ChessPiece( currentId );
         return _.contains(opponitePiece.attacks, kingSquareId);
     }
 
@@ -251,12 +285,12 @@ Board.checkCheckMate = function(squareId){
     kingData.calcMoves();
 
     let firstMoves = kingData.attacks;
+    let boardType = env.boardType;
 
-
-    board.virtual.replicate( board[ env.boardType ]);
+    board.virtual.replicate( board.get());
     env.changeBoards("virtual");
 
-
+    // debugger;
     for(let i = 0; i < firstMoves.length; i++){
       // can anything kill the king while inheriting moves from
       // all pieces
@@ -270,11 +304,13 @@ Board.checkCheckMate = function(squareId){
         let realking = new ChessPiece( kingData.currentSquare );
         let allMoves = realking.moves.concat(realking.attacks);
 
+        if( _.isEmpty( allMoves) ){ return terminate(true); }
+
         for(let j = 0; j < allMoves.length; j++){
           // can the king move to a new spot
           let newSquare = allMoves[j];
-          let holder = board.updateBoard(newSquare, kingData.currentSquare);
           let oldKingSpot = kingData.currentSquare;
+          let holder = board.updateBoard(newSquare, kingData.currentSquare);
 
           kingData.currentSquare = newSquare;
           kingData.empty();
@@ -287,6 +323,7 @@ Board.checkCheckMate = function(squareId){
             let finalSquare = allNewMoves[p];
             if( canBeKilled( finalSquare , newSquare ) ){
               canKingMoveToPossibleSquare = false;
+              break;
             }
           }
 
@@ -296,20 +333,23 @@ Board.checkCheckMate = function(squareId){
           board.set(newSquare, holder);
           kingData.currentSquare = oldKingSpot;
 
-          let allTeamPieces = $(".chess-piece." + kingData.team + ":not(.king)").map(function(item,index){
-            return new ChessPiece( $(this).getSquareId() );
-          }).get();
-
+          let allTeamPieces = _.where(board.get(), {team: kingData.team}).map(function(item){
+            return new ChessPiece( item.currentSquare,true );
+          });
 
           for(let index = 0; index < allTeamPieces.length; index++ ){
+
             // can any piece move in front of the attacker
             let currentTeamMember = allTeamPieces[index];
+            currentTeamMember.calcMoves();
+            if(currentTeamMember.team === "king"){ continue };
             let currentTeamMemberMoves = currentTeamMember.moves.concat(currentTeamMember.attacks);
 
             for(let z = 0; z < currentTeamMemberMoves.length; z++){
               // all moves for  current team mate
               let teamMemberMoveSquareId = currentTeamMemberMoves[i];
-              let teamMemberHolder = board.updateBoard(teamMemberMoveSquareId, currentTeamMember.currentSquare );
+              let teamMemberId = currentTeamMember.currentSquare
+              let teamMemberHolder = board.updateBoard(teamMemberMoveSquareId, teamMemberId );
 
               kingData.empty();
               kingData.calcMoves();
@@ -320,7 +360,7 @@ Board.checkCheckMate = function(squareId){
                 return terminate(false);
               }
 
-              board.updateBoard(currentTeamMember,teamMemberMoveSquareId);
+              board.updateBoard(teamMemberId,teamMemberMoveSquareId);
               board.set(teamMemberMoveSquareId,teamMemberHolder);
             }
 
@@ -372,7 +412,9 @@ _.each(Board.allSpaces, function(squareId){
 */
 
 function ChessPiece(squareId,dontCalculate){
+   // debugger;
   let boardData = board.get(squareId);
+  let me = this;
 
   this.$node = $("#" + squareId + " > .chess-piece");
   this.team = boardData.team;
@@ -381,13 +423,45 @@ function ChessPiece(squareId,dontCalculate){
   this.hasMoved = boardData.hasMoved;
   this.attacks = [];
   this.moves = [];
+  // debugger;
 
   this.data = chessPieces[this.type];
-  this.possibleMoves = this.data.possibleMoves;
+  this.possibleMoves = chessPieces[this.type].possibleMoves;
 
   // calculate moves and attacks for this piece
   // if dontCalculate is false
-  !dontCalculate && this.calcMoves();
+  if(!dontCalculate){
+    this.calcMoves();
+
+    // if(this.type !== "king"){
+
+      function filterOutMoves(newSquareId){
+        let holder = board.updateBoard(newSquareId, squareId);
+        let answer = !isKingInCheck(kingsPosition.currentSquare);
+        board.updateBoard(squareId,newSquareId);
+        board.set(newSquareId,holder);
+        return answer;
+      }
+
+      let boardType = env.boardType;
+
+      if(env.boardType !== "virtual") {
+        board.virtual.replicate( board.get() );
+        env.changeBoards("virtual");
+      }
+
+      // debugger;
+      let kingsPosition = _.findWhere(board.get(), { team: this.team, type: "king"});
+      this.attacks = this.attacks.filter(filterOutMoves);
+      this.moves = this.moves.filter(filterOutMoves);
+
+      env.changeBoards(boardType);
+      if(boardType !== "virtual"){
+        board.virtual = new Board();
+      }
+    // }
+  }
+
 };
 
 ChessPiece.prototype.empty = function(){
@@ -400,7 +474,7 @@ ChessPiece.prototype.isEnemy = function(teamName){
   return (!!teamName && this.team !== teamName);
 }
 
-ChessPiece.prototype.calcMoves = function(){
+ChessPiece.prototype.calcMoves = function(firstLevel){
 
   let parseInfinity = function(num){ return num < 0 ? -1 : 1; }
   // pawn king and castle have unique values that can be added
@@ -430,6 +504,7 @@ ChessPiece.prototype.calcMoves = function(){
       newPosition = Board.calcNewSquare(newPosition, row, col);
       // check to see if position is not false
       if( newPosition ){
+
         // set the destination to the moves array
         let square = board.get(newPosition);
         let dest = this.moves
@@ -538,14 +613,16 @@ env.board[0].addEventListener('click', function(event){
 
       if(piece.canMoveTo(squareId)){
 
+
         if( $("#" + squareId).is(".active-attacks") && piece.CanAttack(squareId) ){
           piece.attack(squareId);
         } else {
           piece.move(squareId);
         }
+
         let teamKingId = $(".king." + env.turn).parent().getSquareId();
         if(Board.checkCheckMate(teamKingId)){ return env.gameOver(); }
-        if( env.isInCheck ){ console.log("check"); }
+        if( env.isInCheck ){ env.takeOutOfCheck(); }
       }
 
       break;
