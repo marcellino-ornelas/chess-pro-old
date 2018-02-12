@@ -273,92 +273,93 @@ Board.checkCheckMate = function(squareId){
         return _.contains(opponitePiece.attacks, kingSquareId);
     }
 
-    if(!squareId){
-      let $king = $(".king." + env.turn);
-      squareId = $king.parent(".chess-square").getSquareId();
-    }
+    // let kingData = new ChessPiece(squareId, true);
+    // kingData.team = env.turn;
+    // kingData.data = chessPieces.all;
+    // kingData.possibleMoves = chessPieces.all.possibleMoves;
+    // kingData.calcMoves();
 
-    let kingData = new ChessPiece(squareId, true);
-    kingData.team = env.turn;
-    kingData.data = chessPieces.all;
-    kingData.possibleMoves = chessPieces.all.possibleMoves;
-    kingData.calcMoves();
-
-    let firstMoves = kingData.attacks;
+    // let firstMoves = kingData.attacks;
     let boardType = env.boardType;
 
     board.virtual.replicate( board.get());
     env.changeBoards("virtual");
 
+    if(isKingInCheck(squareId)){
+
     // debugger;
-    for(let i = 0; i < firstMoves.length; i++){
+    // for(let i = 0; i < firstMoves.length; i++){
       // can anything kill the king while inheriting moves from
       // all pieces
       // is the king in check
-      let canKillKingId = firstMoves[i];
+      // let canKillKingId = firstMoves[i];
 
-      if( canBeKilled(canKillKingId, kingData.currentSquare) ){
+      // if( canBeKilled(canKillKingId, kingData.currentSquare) ){
 
         env.putInCheck();
 
-        let realking = new ChessPiece( kingData.currentSquare );
+        let realking = new ChessPiece( squareId );
         let allMoves = realking.moves.concat(realking.attacks);
 
-        if( _.isEmpty( allMoves) ){ return terminate(true); }
+        if( !_.isEmpty( allMoves ) ){ return terminate(false); }
 
         for(let j = 0; j < allMoves.length; j++){
           // can the king move to a new spot
           let newSquare = allMoves[j];
-          let oldKingSpot = kingData.currentSquare;
-          let holder = board.updateBoard(newSquare, kingData.currentSquare);
+          let oldKingSpot = squareId;
+          let holder = board.updateBoard(newSquare, squareId);
 
-          kingData.currentSquare = newSquare;
-          kingData.empty();
-          kingData.calcMoves();
+          // kingData.currentSquare = newSquare;
+          // kingData.empty();
+          // kingData.calcMoves();
 
-          let allNewMoves = kingData.attacks
-          let canKingMoveToPossibleSquare = true;
+          // let allNewMoves = kingData.attacks
+          let canKingMoveToPossibleSquare = false;
 
-          for(let p = 0; p < allNewMoves.length; p++ ){
-            let finalSquare = allNewMoves[p];
-            if( canBeKilled( finalSquare , newSquare ) ){
-              canKingMoveToPossibleSquare = false;
-              break;
-            }
-          }
+          if(!isKingInCheck(newSquare)){ canKingMoveToPossibleSquare = true;}
 
-          if(canKingMoveToPossibleSquare){ return terminate(false); }
+          // for(let p = 0; p < allNewMoves.length; p++ ){
+          //   let finalSquare = allNewMoves[p];
+          //   if( canBeKilled( finalSquare , newSquare ) ){
+          //     canKingMoveToPossibleSquare = false;
+          //     break;
+          //   }
+          // }
+          // if(canKingMoveToPossibleSquare){ return terminate(false); }
 
           board.updateBoard( oldKingSpot, newSquare);
           board.set(newSquare, holder);
-          kingData.currentSquare = oldKingSpot;
+          // kingData.currentSquare = oldKingSpot;
+          if(canKingMoveToPossibleSquare) { return terminate(false); }
 
-          let allTeamPieces = _.where(board.get(), {team: kingData.team}).map(function(item){
+        } //added curly here
+          let allTeamPieces = _.where(board.get(), {team: env.turn}).map(function(item){
             return new ChessPiece( item.currentSquare,true );
           });
 
           for(let index = 0; index < allTeamPieces.length; index++ ){
-
+            // debugger;
             // can any piece move in front of the attacker
             let currentTeamMember = allTeamPieces[index];
             currentTeamMember.calcMoves();
-            if(currentTeamMember.team === "king"){ continue };
+            if(currentTeamMember.type === "king"){ continue };
             let currentTeamMemberMoves = currentTeamMember.moves.concat(currentTeamMember.attacks);
 
             for(let z = 0; z < currentTeamMemberMoves.length; z++){
               // all moves for  current team mate
-              let teamMemberMoveSquareId = currentTeamMemberMoves[i];
+              let teamMemberMoveSquareId = currentTeamMemberMoves[z];
               let teamMemberId = currentTeamMember.currentSquare
               let teamMemberHolder = board.updateBoard(teamMemberMoveSquareId, teamMemberId );
 
-              kingData.empty();
-              kingData.calcMoves();
+              // kingData.empty();
+              // kingData.calcMoves();
 
-              let lastStandMoves = kingData.attacks;
+              // let lastStandMoves = kingData.attacks;
 
-              if(!_.contains(lastStandMoves, canKillKingId )){
-                return terminate(false);
-              }
+              // if(!_.contains(lastStandMoves, canKillKingId )){
+              //   return terminate(false);
+              // }
+              if(!isKingInCheck(squareId)){ return terminate(false)}
 
               board.updateBoard(teamMemberId,teamMemberMoveSquareId);
               board.set(teamMemberMoveSquareId,teamMemberHolder);
@@ -366,8 +367,9 @@ Board.checkCheckMate = function(squareId){
 
           }
           return terminate(true);
-        }
-      }
+        // }
+        // return terminate(true);
+      // }
     }
     return terminate(false);
   };
